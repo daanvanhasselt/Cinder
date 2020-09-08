@@ -5,12 +5,23 @@
 #include "cinder/gl/Batch.h"
 #include "cinder/CinderImGui.h"
 #include "cinder/CameraUi.h"
+#include "cinder/Log.h"
 
 #include "Resources.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
+
+// The window-specific data for each window
+class WindowData {
+public:
+	WindowData()
+		: mPrimary(false)
+	{}
+
+	bool			mPrimary;
+};
 
 class CameraPerspApp : public App {
   public:
@@ -62,6 +73,10 @@ void CameraPerspApp::prepareSettings( Settings* settings )
 void CameraPerspApp::setup()
 {
 	setWindowSize( 1280, 480 );
+
+	WindowData *data = new WindowData();
+	data->mPrimary = true;
+	getWindow()->setUserData<WindowData>(data);
 	
 	gl::enableDepthRead();
 	gl::enableDepthWrite();
@@ -125,23 +140,6 @@ void CameraPerspApp::mouseDrag( MouseEvent event )
 
 void CameraPerspApp::update()
 {
-	ImGui::Begin( "CameraPersp" );
-	if( ImGui::Combo( "Object", &mObjectSelection, mObjectNames ) ) {
-		mCurrObject = (size_t)mObjectSelection;
-	}
-	ImGui::Separator();
-	ImGui::DragFloat3( "Eye Point", &mEyePoint, 0.01f );
-	ImGui::DragFloat3( "Look At", &mLookAt, 0.01f );
-	ImGui::DragFloat( "FOV", &mFov, 1.0f, 1.0f, 179.0f );
-	ImGui::DragFloat( "Near Plane", &mNearPlane, 0.02f, 0.1f, FLT_MAX );
-	ImGui::DragFloat( "Far Plane", &mFarPlane, 0.02f, 0.1f, FLT_MAX );
-	ImGui::DragFloat2( "Lens Shift X", &mLensShift, 0.01f );
-	ImGui::Separator();
-	if( ImGui::Button( "Reset Defaults" ) ) {
-		setDefaultValues();
-	}
-	ImGui::End();
-
 	renderObjectToFbo();
 }
 
@@ -180,6 +178,11 @@ void CameraPerspApp::renderObjectToFbo()
 
 void CameraPerspApp::draw()
 {
+	WindowData* data = getWindow()->getUserData<WindowData>();
+	if (!data || !data->mPrimary) {
+		return;
+	}
+
 	gl::clear( Color( 0.2, 0.2, 0.2 ) );
 	gl::ScopedGlslProg shaderScp( gl::getStockShader( gl::ShaderDef().color() ) );
 
@@ -255,6 +258,26 @@ void CameraPerspApp::draw()
 	gl::drawSolidRect( Rectf( 0.0f, 0.0f, 640, 480 ) );
 
 	mObjectFbo->unbindTexture();
+
+	// UI
+	{
+		ImGui::Begin("CameraPersp");
+		if (ImGui::Combo("Object", &mObjectSelection, mObjectNames)) {
+			mCurrObject = (size_t)mObjectSelection;
+		}
+		ImGui::Separator();
+		ImGui::DragFloat3("Eye Point", &mEyePoint, 0.01f);
+		ImGui::DragFloat3("Look At", &mLookAt, 0.01f);
+		ImGui::DragFloat("FOV", &mFov, 1.0f, 1.0f, 179.0f);
+		ImGui::DragFloat("Near Plane", &mNearPlane, 0.02f, 0.1f, FLT_MAX);
+		ImGui::DragFloat("Far Plane", &mFarPlane, 0.02f, 0.1f, FLT_MAX);
+		ImGui::DragFloat2("Lens Shift X", &mLensShift, 0.01f);
+		ImGui::Separator();
+		if (ImGui::Button("Reset Defaults")) {
+			setDefaultValues();
+		}
+		ImGui::End();
+	}
 }
 
 CINDER_APP( CameraPerspApp, RendererGl( RendererGl::Options().msaa( 16 ) ), CameraPerspApp::prepareSettings )

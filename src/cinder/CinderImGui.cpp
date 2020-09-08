@@ -346,11 +346,233 @@ namespace ImGui {
 	}
 }
 
+struct ImGuiViewportDataCinder
+{
+	ci::app::WindowRef window;
+	ci::app::Window::Format format;
+
+	ImGuiViewportDataCinder() { window = nullptr; }
+	~ImGuiViewportDataCinder() { IM_ASSERT(window == nullptr); }
+};
+
+
+static void ImGui_ImplCinder_WindowCloseCallback(ci::app::WindowRef window) {
+	if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window.get())) {
+		viewport->PlatformRequestClose = true;
+	}
+}
+
+static void ImGui_ImplCinder_WindowPosCallback(ci::app::WindowRef window, int x, int y)
+{
+	if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window.get()))
+	{
+		viewport->PlatformRequestMove = true;
+	}
+}
+
+static void ImGui_ImplCinder_WindowSizeCallback(ci::app::WindowRef window, int w, int h)
+{
+	if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window.get()))
+	{
+		viewport->PlatformRequestResize = true;
+	}
+}
+
+static void ImGui_ImplCinder_MouseDown(ci::app::MouseEvent& event);
+static void ImGui_ImplCinder_MouseUp(ci::app::MouseEvent& event);
+static void ImGui_ImplCinder_MouseMove(ci::app::MouseEvent& event);
+static void ImGui_ImplCinder_MouseDrag(ci::app::MouseEvent& event);
+static void ImGui_ImplCinder_MouseWheel(ci::app::MouseEvent& event);
+static void ImGui_ImplCinder_KeyDown(ci::app::KeyEvent& event);
+static void ImGui_ImplCinder_KeyUp(ci::app::KeyEvent& event);
+
+static void ImGui_ImplCinder_CreateWindow(ImGuiViewport* viewport)
+{
+	ImGuiViewportDataCinder* data = IM_NEW(ImGuiViewportDataCinder)();
+	viewport->PlatformUserData = data;
+
+	// create format
+	data->format = ci::app::Window::Format().pos(viewport->Pos).size(viewport->Size).borderless();
+
+	// create window
+	auto window = ci::app::App::get()->createWindow(data->format);
+	sWindowConnections[window] += window->getSignalClose().connect([window]() {
+		ImGui_ImplCinder_WindowCloseCallback(window);
+		});
+
+	sWindowConnections[window] += window->getSignalMove().connect([window]() {
+		ImGui_ImplCinder_WindowPosCallback(window, window->getPos().x, window->getPos().y);
+		});
+
+	sWindowConnections[window] += window->getSignalResize().connect([window]() {
+		ImGui_ImplCinder_WindowSizeCallback(window, window->getSize().x, window->getSize().y);
+		});
+
+	sWindowConnections[window] += window->getSignalMouseDown().connect(ImGui_ImplCinder_MouseDown);
+	sWindowConnections[window] += window->getSignalMouseUp().connect(ImGui_ImplCinder_MouseUp);
+	sWindowConnections[window] += window->getSignalMouseMove().connect(ImGui_ImplCinder_MouseMove);
+	sWindowConnections[window] += window->getSignalMouseDrag().connect(ImGui_ImplCinder_MouseDrag);
+	sWindowConnections[window] += window->getSignalMouseWheel().connect(ImGui_ImplCinder_MouseWheel);
+	sWindowConnections[window] += window->getSignalKeyDown().connect(ImGui_ImplCinder_KeyDown);
+	sWindowConnections[window] += window->getSignalKeyUp().connect(ImGui_ImplCinder_KeyUp);
+
+	data->window = window;
+	viewport->PlatformRequestResize = false;
+	viewport->PlatformHandle = window.get();
+	viewport->PlatformHandleRaw = window->getNative();
+
+	window->getRenderer()->makeCurrentContext();
+}
+
+static void ImGui_ImplCinder_DestroyWindow(ImGuiViewport* viewport)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData)
+	{
+		if (data->window) {
+			sWindowConnections.erase(data->window);
+			if (!ci::app::App::get()->getQuitRequested()) {
+				data->window->close();
+			}
+			data->window = nullptr;
+		}
+		IM_DELETE(data);
+
+		viewport->PlatformUserData = nullptr;
+		viewport->PlatformHandle = nullptr;
+		viewport->PlatformHandleRaw = nullptr;
+	}
+}
+
+static void ImGui_ImplCinder_SetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData)
+	{
+		if (data->window) {
+			data->window->setPos(pos);
+		}
+	}
+}
+
+static ImVec2 ImGui_ImplCinder_GetWindowPos(ImGuiViewport* viewport)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData)
+	{
+		IM_ASSERT(data->window != 0);
+		return data->window->getPos();
+	}
+
+	return ImVec2();
+}
+
+static void ImGui_ImplCinder_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData)
+	{
+		if (data->window) {
+			data->window->setSize(size);
+		}
+	}
+}
+
+static ImVec2 ImGui_ImplCinder_GetWindowSize(ImGuiViewport* viewport)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData)
+	{
+		IM_ASSERT(data->window != 0);
+		return data->window->getSize();
+	}
+
+	return ImVec2();
+}
+
+static void ImGui_ImplCinder_SetWindowTitle(ImGuiViewport* viewport, const char* title)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData) {
+		if (data->window) {
+			data->window->setTitle(title);
+		}
+	}
+}
+
+static void ImGui_ImplCinder_UpdateWindow(ImGuiViewport* viewport)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData) {
+		IM_ASSERT(data->window != 0);
+
+		data->format = ci::app::Window::Format().pos(viewport->Pos).size(viewport->Size);
+		if (data->window->getPos() != data->format.getPos()) {
+			data->window->setPos(data->format.getPos());
+			viewport->PlatformRequestMove = true;
+		}
+		if (data->window->getSize() != data->format.getSize()) {
+			data->window->setSize(data->format.getSize());
+			viewport->PlatformRequestResize = true;
+		}
+	}
+}
+
+static void ImGui_ImplCinder_ShowWindow(ImGuiViewport* viewport)
+{
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData) {
+		if (data->window) {
+			data->window->show();
+		}
+	}
+}
+
+static void ImGui_ImplCinder_RenderWindow(ImGuiViewport* viewport, void*) {
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData) {
+		if (data->window) {
+			data->window->getRenderer()->makeCurrentContext();
+		}
+	}
+}
+
+static void ImGui_ImplCinder_SwapBuffers(ImGuiViewport* viewport, void*) {
+	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData) {
+		if (data->window) {
+			data->window->getRenderer()->makeCurrentContext();
+			data->window->getRenderer()->swapBuffers();
+		}
+	}
+}
+
+static void ImGui_ImplCinder_UpdateMonitors()
+{
+	ImGui::GetPlatformIO().Monitors.resize(0);
+	auto displays = ci::Display::getDisplays();
+	for (auto d : displays) {
+		ImGuiPlatformMonitor imgui_monitor;
+		auto b = d->getBounds();
+		imgui_monitor.MainPos = ImVec2((float)b.x1, (float)b.y1);
+		imgui_monitor.MainSize = ImVec2((float)(b.getWidth()), (float)(b.getHeight()));
+		imgui_monitor.WorkPos = imgui_monitor.MainPos;
+		imgui_monitor.WorkSize = imgui_monitor.MainSize;
+		ImGuiPlatformIO& io = ImGui::GetPlatformIO();
+		io.Monitors.push_back(imgui_monitor);
+	}
+}
+
+static void ImGui_ImplCinder_InitPlatformInterface() {
+	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+
+	platform_io.Platform_CreateWindow = ImGui_ImplCinder_CreateWindow;
+	platform_io.Platform_DestroyWindow = ImGui_ImplCinder_DestroyWindow;
+	platform_io.Platform_ShowWindow = ImGui_ImplCinder_ShowWindow;
+	platform_io.Platform_SetWindowPos = ImGui_ImplCinder_SetWindowPos;
+	platform_io.Platform_GetWindowPos = ImGui_ImplCinder_GetWindowPos;
+	platform_io.Platform_SetWindowSize = ImGui_ImplCinder_SetWindowSize;
+	platform_io.Platform_GetWindowSize = ImGui_ImplCinder_GetWindowSize;
+	platform_io.Platform_UpdateWindow = ImGui_ImplCinder_UpdateWindow;
+	platform_io.Platform_SetWindowTitle = ImGui_ImplCinder_SetWindowTitle;
+	platform_io.Platform_RenderWindow = ImGui_ImplCinder_RenderWindow;
+	platform_io.Platform_SwapBuffers = ImGui_ImplCinder_SwapBuffers;
+}
 
 static void ImGui_ImplCinder_MouseDown( ci::app::MouseEvent& event )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ci::app::toPixels( event.getPos() );
+	io.MousePos = ci::app::toPixels( event.getPos() ) + event.getWindow()->getPos();
 	io.MouseDown[0] = event.isLeftDown();
 	io.MouseDown[1] = event.isRightDown();
 	io.MouseDown[2] = event.isMiddleDown();
@@ -373,14 +595,14 @@ static void ImGui_ImplCinder_MouseWheel( ci::app::MouseEvent& event )
 static void ImGui_ImplCinder_MouseMove( ci::app::MouseEvent& event )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ci::app::toPixels( event.getPos() );
+	io.MousePos = ci::app::toPixels( event.getPos() ) + event.getWindow()->getPos();
 	event.setHandled( io.WantCaptureMouse );
 }
 //! sets the right mouseDrag IO values in imgui
 static void ImGui_ImplCinder_MouseDrag( ci::app::MouseEvent& event )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ci::app::toPixels( event.getPos() );
+	io.MousePos = ci::app::toPixels( event.getPos() ) + event.getWindow()->getPos();
 	event.setHandled( io.WantCaptureMouse );
 }
 
@@ -452,7 +674,7 @@ static void ImGui_ImplCinder_NewFrameGuard( const ci::app::WindowRef& window ) {
 	IM_ASSERT( io.Fonts->IsBuilt() ); // Font atlas needs to be built, call renderer _NewFrame() function e.g. ImGui_ImplOpenGL3_NewFrame() 
 
 	// Setup display size
-	io.DisplaySize = ci::app::toPixels( window->getSize() );
+	//io.DisplaySize = ci::app::toPixels( window->getSize() );
 
 	// Setup time step
 	static double g_Time = 0.0f;
@@ -468,7 +690,18 @@ static void ImGui_ImplCinder_NewFrameGuard( const ci::app::WindowRef& window ) {
 static void ImGui_ImplCinder_PostDraw()
 {
 	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+	
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		auto ctx = ci::gl::context();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		ctx->makeCurrent();
+	}
+
 	sTriggerNewFrame = true;
 }
 
@@ -477,6 +710,8 @@ static bool ImGui_ImplCinder_Init( const ci::app::WindowRef& window, const ImGui
 	// Setup back-end capabilities flags
 	ImGuiIO& io = ImGui::GetIO();
 	io.BackendPlatformName = "imgui_impl_cinder";
+	io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+	//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
 	// Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
 	io.KeyMap[ImGuiKey_Tab] = ci::app::KeyEvent::KEY_TAB;
@@ -532,7 +767,23 @@ static bool ImGui_ImplCinder_Init( const ci::app::WindowRef& window, const ImGui
 	sWindowConnections[window] += window->getSignalClose().connect( [=] {
 		sWindowConnections.erase( window );
 		sTriggerNewFrame = false;
+		ci::app::App::get()->quit();
+		ci::app::App::get()->setQuitRequested();
 	} );
+
+	// Register main window handle (which is owned by the main application, not by us)
+	// This is mostly for simplicity and consistency, so that our code (e.g. mouse handling etc.) can use same logic for main and secondary viewports.
+	ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+	ImGuiViewportDataCinder* data = IM_NEW(ImGuiViewportDataCinder)();
+	data->window = window;
+	main_viewport->PlatformUserData = data;
+	main_viewport->PlatformHandle = (void*)data->window.get();
+	main_viewport->PlatformHandleRaw = data->window->getNative();
+
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		ImGui_ImplCinder_UpdateMonitors();
+		ImGui_ImplCinder_InitPlatformInterface();
+	}
 
 	return true;
 }
@@ -557,6 +808,10 @@ bool ImGui::Initialize( const ImGui::Options& options )
 	io.DisplaySize = ci::vec2( ci::app::toPixels( window->getSize() ) );
 	io.DeltaTime = 1.0f / 60.0f;
 	io.WantCaptureMouse = true;
+
+	// multi viewport
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	static std::string path;
 	if( options.getIniPath().empty() ) {
