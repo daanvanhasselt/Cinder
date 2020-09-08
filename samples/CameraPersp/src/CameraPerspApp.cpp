@@ -277,6 +277,11 @@ void CameraPerspApp::draw()
 			setDefaultValues();
 		}
 		ImGui::End();
+
+		ImGui::Begin("Some window");
+		ImGui::Separator();
+		ImGui::DragFloat3("Eye Point", &mEyePoint, 0.01f);
+		ImGui::End();
 	}
 }
 
