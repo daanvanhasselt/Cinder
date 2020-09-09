@@ -13,16 +13,6 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-// The window-specific data for each window
-class WindowData {
-public:
-	WindowData()
-		: mPrimary(false)
-	{}
-
-	bool			mPrimary;
-};
-
 class CameraPerspApp : public App {
   public:
 	
@@ -73,10 +63,6 @@ void CameraPerspApp::prepareSettings( Settings* settings )
 void CameraPerspApp::setup()
 {
 	setWindowSize( 1280, 480 );
-
-	WindowData *data = new WindowData();
-	data->mPrimary = true;
-	getWindow()->setUserData<WindowData>(data);
 	
 	gl::enableDepthRead();
 	gl::enableDepthWrite();
@@ -103,7 +89,7 @@ void CameraPerspApp::setup()
 	mObjects.push_back( gl::Batch::create( geom::Helix().subdivisionsAxis( 32 ), mObjectGlsl ) );
 	mObjects.push_back( gl::Batch::create( geom::Cylinder().subdivisionsAxis( 32 ), mObjectGlsl ) );
 	
-	ImGui::Initialize(ImGui::Options().enableViewports(true));
+	ImGui::Initialize();
 
 	mObjectSelection = 0;
 	mObjectNames = { "Teapot", "Torus", "Cone", "Helix", "Cylinder" };
@@ -141,6 +127,31 @@ void CameraPerspApp::mouseDrag( MouseEvent event )
 void CameraPerspApp::update()
 {
 	renderObjectToFbo();
+
+	// UI
+	{
+		ImGui::Begin("CameraPersp");
+		if (ImGui::Combo("Object", &mObjectSelection, mObjectNames)) {
+			mCurrObject = (size_t)mObjectSelection;
+		}
+		ImGui::Separator();
+		ImGui::DragFloat3("Eye Point", &mEyePoint, 0.01f);
+		ImGui::DragFloat3("Look At", &mLookAt, 0.01f);
+		ImGui::DragFloat("FOV", &mFov, 1.0f, 1.0f, 179.0f);
+		ImGui::DragFloat("Near Plane", &mNearPlane, 0.02f, 0.1f, FLT_MAX);
+		ImGui::DragFloat("Far Plane", &mFarPlane, 0.02f, 0.1f, FLT_MAX);
+		ImGui::DragFloat2("Lens Shift X", &mLensShift, 0.01f);
+		ImGui::Separator();
+		if (ImGui::Button("Reset Defaults")) {
+			setDefaultValues();
+		}
+		ImGui::End();
+
+		ImGui::Begin("Some window");
+		ImGui::Separator();
+		ImGui::DragFloat3("Eye Point", &mEyePoint, 0.01f);
+		ImGui::End();
+	}
 }
 
 void CameraPerspApp::setDefaultValues()
@@ -178,11 +189,6 @@ void CameraPerspApp::renderObjectToFbo()
 
 void CameraPerspApp::draw()
 {
-	WindowData* data = getWindow()->getUserData<WindowData>();
-	if (!data || !data->mPrimary) {
-		return;
-	}
-
 	gl::clear( Color( 0.2, 0.2, 0.2 ) );
 	gl::ScopedGlslProg shaderScp( gl::getStockShader( gl::ShaderDef().color() ) );
 
@@ -259,30 +265,7 @@ void CameraPerspApp::draw()
 
 	mObjectFbo->unbindTexture();
 
-	// UI
-	{
-		ImGui::Begin("CameraPersp");
-		if (ImGui::Combo("Object", &mObjectSelection, mObjectNames)) {
-			mCurrObject = (size_t)mObjectSelection;
-		}
-		ImGui::Separator();
-		ImGui::DragFloat3("Eye Point", &mEyePoint, 0.01f);
-		ImGui::DragFloat3("Look At", &mLookAt, 0.01f);
-		ImGui::DragFloat("FOV", &mFov, 1.0f, 1.0f, 179.0f);
-		ImGui::DragFloat("Near Plane", &mNearPlane, 0.02f, 0.1f, FLT_MAX);
-		ImGui::DragFloat("Far Plane", &mFarPlane, 0.02f, 0.1f, FLT_MAX);
-		ImGui::DragFloat2("Lens Shift X", &mLensShift, 0.01f);
-		ImGui::Separator();
-		if (ImGui::Button("Reset Defaults")) {
-			setDefaultValues();
-		}
-		ImGui::End();
-
-		ImGui::Begin("Some window");
-		ImGui::Separator();
-		ImGui::DragFloat3("Eye Point", &mEyePoint, 0.01f);
-		ImGui::End();
-	}
+	
 }
 
 CINDER_APP( CameraPerspApp, RendererGl( RendererGl::Options().msaa( 16 ) ), CameraPerspApp::prepareSettings )
