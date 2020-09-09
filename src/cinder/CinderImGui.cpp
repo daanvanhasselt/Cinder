@@ -21,7 +21,7 @@ static bool sWindowJustCreated = false;
 
 namespace ImGui {
 	Options::Options()
-		: mWindow( ci::app::getWindow() ), mAutoRender( true ), mIniPath(), mSignalPriority( 1 ), mKeyboardEnabled( true ), mGamepadEnabled( true )
+		: mWindow( ci::app::getWindow() ), mAutoRender( true ), mIniPath(), mSignalPriority( 1 ), mKeyboardEnabled( true ), mGamepadEnabled( true ), mViewportsEnabled(false), mDockingEnabled(true)
 	{
 		//! Default Cinder styling
 		mStyle.Alpha = 1.0f;                            // Global alpha applies to everything in ImGui
@@ -144,6 +144,18 @@ namespace ImGui {
 	Options& Options::enableGamepad( bool enable )
 	{
 		mGamepadEnabled = enable;
+		return *this;
+	}
+
+	Options& Options::enableViewports(bool enable)
+	{
+		mViewportsEnabled = enable;
+		return *this;
+	}
+
+	Options& Options::enableDocking(bool enable)
+	{
+		mDockingEnabled = enable;
 		return *this;
 	}
 
@@ -578,7 +590,11 @@ static void ImGui_ImplCinder_InitPlatformInterface() {
 static void ImGui_ImplCinder_MouseDown( ci::app::MouseEvent& event )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ci::app::toPixels( event.getPos() ) + event.getWindow()->getPos();
+	glm::vec2 pos = ci::app::toPixels( event.getPos() );
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		pos += event.getWindow()->getPos();
+	}
+	io.MousePos = pos;
 	io.MouseDown[0] = event.isLeftDown();
 	io.MouseDown[1] = event.isRightDown();
 	io.MouseDown[2] = event.isMiddleDown();
@@ -607,7 +623,11 @@ static void ImGui_ImplCinder_MouseWheel( ci::app::MouseEvent& event )
 static void ImGui_ImplCinder_MouseMove( ci::app::MouseEvent& event )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ci::app::toPixels( event.getPos() ) + event.getWindow()->getPos();
+	glm::vec2 pos = ci::app::toPixels(event.getPos());
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		pos += event.getWindow()->getPos();
+	}
+	io.MousePos = pos;
 	event.setHandled( io.WantCaptureMouse );
 }
 
@@ -615,7 +635,11 @@ static void ImGui_ImplCinder_MouseMove( ci::app::MouseEvent& event )
 static void ImGui_ImplCinder_MouseDrag( ci::app::MouseEvent& event )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ci::app::toPixels( event.getPos() ) + event.getWindow()->getPos();
+	glm::vec2 pos = ci::app::toPixels(event.getPos());
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		pos += event.getWindow()->getPos();
+	}
+	io.MousePos = pos;
 	event.setHandled( io.WantCaptureMouse );
 }
 
@@ -723,8 +747,7 @@ static bool ImGui_ImplCinder_Init( const ci::app::WindowRef& window, const ImGui
 	// Setup back-end capabilities flags
 	ImGuiIO& io = ImGui::GetIO();
 	io.BackendPlatformName = "imgui_impl_cinder";
-	io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
-	//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
+	if(options.isViewportsEnabled()) io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 
 	// Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
 	io.KeyMap[ImGuiKey_Tab] = ci::app::KeyEvent::KEY_TAB;
@@ -784,16 +807,16 @@ static bool ImGui_ImplCinder_Init( const ci::app::WindowRef& window, const ImGui
 		ci::app::App::get()->setQuitRequested();
 	} );
 
-	// Register main window handle (which is owned by the main application, not by us)
-	// This is mostly for simplicity and consistency, so that our code (e.g. mouse handling etc.) can use same logic for main and secondary viewports.
-	ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-	ImGuiViewportDataCinder* data = IM_NEW(ImGuiViewportDataCinder)();
-	data->window = window;
-	main_viewport->PlatformUserData = data;
-	main_viewport->PlatformHandle = (void*)data->window.get();
-	main_viewport->PlatformHandleRaw = data->window->getNative();
+	if(options.isViewportsEnabled()) {
+		// Register main window handle (which is owned by the main application, not by us)
+		// This is mostly for simplicity and consistency, so that our code (e.g. mouse handling etc.) can use same logic for main and secondary viewports.
+		ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+		ImGuiViewportDataCinder* data = IM_NEW(ImGuiViewportDataCinder)();
+		data->window = window;
+		main_viewport->PlatformUserData = data;
+		main_viewport->PlatformHandle = (void*)data->window.get();
+		main_viewport->PlatformHandleRaw = data->window->getNative();
 
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		ImGui_ImplCinder_UpdateMonitors();
 		ImGui_ImplCinder_InitPlatformInterface();
 	}
@@ -822,9 +845,8 @@ bool ImGui::Initialize( const ImGui::Options& options )
 	io.DeltaTime = 1.0f / 60.0f;
 	io.WantCaptureMouse = true;
 
-	// multi viewport
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	if(options.isDockingEnabled()) io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	if(options.isViewportsEnabled()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	static std::string path;
 	if( options.getIniPath().empty() ) {

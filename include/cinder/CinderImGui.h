@@ -77,6 +77,16 @@ namespace ImGui {
 		//! Returns whether the gamepad input is enabled
 		bool isGamepadEnabled() const { return mGamepadEnabled; }
 
+		//! Enables viewports. Allows imgui windows to be dragged outside of the main window. Default to false.
+		Options& enableViewports(bool enable);
+		//! Returns whether viewports is enabled
+		bool isViewportsEnabled() const { return mViewportsEnabled; }
+
+		//! Enables docking. Default to true.
+		Options& enableDocking(bool enable);
+		//! Returns whether docking is enabled
+		bool isDockingEnabled() const { return mDockingEnabled; }
+
 		//! Sets the signal priority that will be use to connect the signals and render ImGui
 		Options& signalPriority( int signalPriority );
 		//! Returns the signal priority that will be use to connect the signals and render ImGui
@@ -86,10 +96,13 @@ namespace ImGui {
 		Options& style( const ImGuiStyle& style );
 		//! Returns the ImGuiStyle used during initialization.
 		const ImGuiStyle& getStyle() const { return mStyle; }
+
 	protected:
 		bool							mAutoRender;
 		bool							mKeyboardEnabled;
 		bool							mGamepadEnabled;
+		bool							mViewportsEnabled;
+		bool							mDockingEnabled;
 		ImGuiStyle						mStyle;
 		ci::app::WindowRef				mWindow;
 		ci::fs::path					mIniPath;

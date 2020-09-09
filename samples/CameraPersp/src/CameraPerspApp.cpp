@@ -103,7 +103,7 @@ void CameraPerspApp::setup()
 	mObjects.push_back( gl::Batch::create( geom::Helix().subdivisionsAxis( 32 ), mObjectGlsl ) );
 	mObjects.push_back( gl::Batch::create( geom::Cylinder().subdivisionsAxis( 32 ), mObjectGlsl ) );
 	
-	ImGui::Initialize();
+	ImGui::Initialize(ImGui::Options().enableViewports(true));
 
 	mObjectSelection = 0;
 	mObjectNames = { "Teapot", "Torus", "Cone", "Helix", "Cylinder" };
