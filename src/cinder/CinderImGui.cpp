@@ -670,7 +670,7 @@ static void ImGui_ImplCinder_KeyDown( ci::app::KeyEvent& event )
 	io.KeyAlt = io.KeysDown[ci::app::KeyEvent::KEY_LALT] || io.KeysDown[ci::app::KeyEvent::KEY_RALT];
 	io.KeySuper = io.KeysDown[ci::app::KeyEvent::KEY_LMETA] || io.KeysDown[ci::app::KeyEvent::KEY_RMETA] || io.KeysDown[ci::app::KeyEvent::KEY_LSUPER] || io.KeysDown[ci::app::KeyEvent::KEY_RSUPER];
 
-	event.setHandled( io.WantCaptureKeyboard );
+	event.setHandled( io.WantTextInput );
 }
 
 static void ImGui_ImplCinder_KeyUp( ci::app::KeyEvent& event )
@@ -688,7 +688,7 @@ static void ImGui_ImplCinder_KeyUp( ci::app::KeyEvent& event )
 	io.KeyShift = io.KeysDown[ci::app::KeyEvent::KEY_LSHIFT] || io.KeysDown[ci::app::KeyEvent::KEY_RSHIFT];
 	io.KeyAlt = io.KeysDown[ci::app::KeyEvent::KEY_LALT] || io.KeysDown[ci::app::KeyEvent::KEY_RALT];
 
-	event.setHandled( io.WantCaptureKeyboard );
+	event.setHandled( io.WantTextInput );
 }
 
 static void ImGui_ImplCinder_NewFrameGuard( const ci::app::WindowRef& window );

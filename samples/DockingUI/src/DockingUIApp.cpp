@@ -12,23 +12,24 @@ class DockingUIApp : public App {
   public:
 	static void prepareSettings(Settings* settings);
 	void setup() override;
-	void mouseDown( MouseEvent event ) override;
+	void keyDown( KeyEvent event ) override;
 	void update() override;
 	void drawSceneInFbo();
 	void drawPrimaryWindow();
 	void drawUI();
 
 	float mUIScale = 1.0;
-
 	float mCircleRadius = 50.0;
 
 	glm::ivec2 mSceneResolution = glm::ivec2(1024, 1024);
 	int mSceneMSAA = 0;
 	gl::FboRef mSceneFbo;
+
+	bool mMaximizeScene = false;
 };
 
 void DockingUIApp::prepareSettings(Settings* settings) {
-	auto display = ci::Display::getMainDisplay();
+	auto display = Display::getMainDisplay();
 	auto size = glm::vec2(display->getSize()) * 0.9f;
 	auto pos = glm::vec2(display->getSize()) * 0.05f;
 	settings->setWindowSize(size);
@@ -43,7 +44,10 @@ void DockingUIApp::setup() {
 	ImGui::Initialize(ImGui::Options().enableViewports(true));
 }
 
-void DockingUIApp::mouseDown( MouseEvent event ) {
+void DockingUIApp::keyDown( KeyEvent event ) {
+	if (event.getCode() == KeyEvent::KEY_f) {
+		mMaximizeScene = !mMaximizeScene;
+	}
 }
 
 void DockingUIApp::update() {
@@ -67,7 +71,17 @@ void DockingUIApp::drawSceneInFbo() {
 }
 
 void DockingUIApp::drawPrimaryWindow() {
-	drawUI();
+	if (mMaximizeScene && mSceneFbo) {
+		gl::clear(Color(0, 0, 0));
+		auto tex = mSceneFbo->getColorTexture();
+		Rectf srcRect = tex->getBounds();
+		Rectf dstRect = getWindowBounds();
+		Rectf fitRect = srcRect.getCenteredFit(dstRect, true);
+		gl::draw(tex, fitRect);
+	}
+	else {
+		drawUI();
+	}
 }
 
 void DockingUIApp::drawUI() {
@@ -94,9 +108,9 @@ void DockingUIApp::drawUI() {
 			// fit in window
 			auto contentRegionMin = ImGui::GetWindowContentRegionMin();
 			auto contentRegionMax = ImGui::GetWindowContentRegionMax();
-			auto srcRect = ci::Rectf(0, 0, tex->getWidth(), tex->getHeight());
-			auto dstRect = ci::Rectf(contentRegionMin.x, contentRegionMin.y, contentRegionMax.x, contentRegionMax.y);
-			ci::Rectf fitRect = srcRect.getCenteredFit(dstRect, true);
+			auto srcRect = Rectf(0, 0, tex->getWidth(), tex->getHeight());
+			auto dstRect = Rectf(contentRegionMin.x, contentRegionMin.y, contentRegionMax.x, contentRegionMax.y);
+			auto fitRect = srcRect.getCenteredFit(dstRect, true);
 			glm::vec2 scale = fitRect.getSize() / srcRect.getSize();
 			glm::vec2 size = srcRect.getSize() * scale;
 			glm::vec2 offset = contentRegionMin;
