@@ -701,6 +701,10 @@ static void ImGui_ImplCinder_Resize()
 	ImGui_ImplCinder_NewFrameGuard( ci::app::getWindow() );
 }
 
+static void ImGui_ImplCinder_Move() {
+	ImGui_ImplCinder_NewFrameGuard(ci::app::getWindow());
+}
+
 static void ImGui_ImplCinder_NewFrameGuard( const ci::app::WindowRef& window ) {
 	if( ! sTriggerNewFrame )
 		return;
@@ -795,6 +799,7 @@ static bool ImGui_ImplCinder_Init( const ci::app::WindowRef& window, const ImGui
 	sWindowConnections[window] += window->getSignalKeyDown().connect( signalPriority, ImGui_ImplCinder_KeyDown );
 	sWindowConnections[window] += window->getSignalKeyUp().connect( signalPriority, ImGui_ImplCinder_KeyUp );
 	sWindowConnections[window] += window->getSignalResize().connect( signalPriority, ImGui_ImplCinder_Resize );
+	sWindowConnections[window] += window->getSignalMove().connect(signalPriority, ImGui_ImplCinder_Move);
 	if( options.isAutoRenderEnabled() ) {
 		sWindowConnections[window] += ci::app::App::get()->getSignalUpdate().connect( std::bind( ImGui_ImplCinder_NewFrameGuard, window ) );
 		sWindowConnections[window] += window->getSignalPostDraw().connect( ImGui_ImplCinder_PostDraw );
@@ -840,13 +845,13 @@ bool ImGui::Initialize( const ImGui::Options& options )
 	ImGuiIO& io = ImGui::GetIO();
 	if( options.isKeyboardEnabled() ) io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 	if( options.isGamepadEnabled() ) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls	
+	if (options.isDockingEnabled()) io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	if (options.isViewportsEnabled()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
 	ci::app::WindowRef window = options.getWindow();
 	io.DisplaySize = ci::vec2( ci::app::toPixels( window->getSize() ) );
 	io.DeltaTime = 1.0f / 60.0f;
 	io.WantCaptureMouse = true;
-
-	if(options.isDockingEnabled()) io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	if(options.isViewportsEnabled()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	static std::string path;
 	if( options.getIniPath().empty() ) {
