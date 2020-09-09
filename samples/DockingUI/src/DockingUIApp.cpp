@@ -2,6 +2,7 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 #include "cinder/CinderImGui.h"
+#include "cinder/Log.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -17,7 +18,9 @@ class DockingUIApp : public App {
 	void drawPrimaryWindow();
 	void drawUI();
 
-	float mCircleRadius = 50.0f;
+	float mUIScale = 1.0;
+
+	float mCircleRadius = 50.0;
 
 	glm::ivec2 mSceneResolution = glm::ivec2(1024, 1024);
 	int mSceneMSAA = 0;
@@ -68,7 +71,6 @@ void DockingUIApp::drawPrimaryWindow() {
 }
 
 void DockingUIApp::drawUI() {
-
 	// set up a fullscreen dockspace for our windows to dock in
 	{
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -108,24 +110,26 @@ void DockingUIApp::drawUI() {
 	// draw some GUI windows
 	{
 		ImGui::Begin("Window 1");
+		ImGui::SetWindowFontScale(mUIScale);
 		ImGui::DragInt2("Scene resolution", &mSceneResolution[0], 1.0, 1, 4096);
 		ImGui::DragInt("Scene MSAA", &mSceneMSAA, 1.0f, 0, 32);
 		ImGui::End();
 	}
 	{
 		ImGui::Begin("Window 2");
+		ImGui::SetWindowFontScale(mUIScale);
 		ImGui::DragFloat("Circle radius", &mCircleRadius);
 		ImGui::End();
 	}
 	{
 		ImGui::Begin("Window 3");
-		static int comboIndex = 0;
-		static vector<string> comboValues = { "One", "Two", "Three" };
-		ImGui::Combo("Combo box", &comboIndex, comboValues, ImGuiComboFlags_None);
+		ImGui::SetWindowFontScale(mUIScale);
+		ImGui::DragFloat("UI scale", &mUIScale, 0.1, 0.25, 10.0);
 		ImGui::End();
 	}
 	{
 		ImGui::Begin("Window 4");
+		ImGui::SetWindowFontScale(mUIScale);
 		static int comboIndex = 0;
 		static vector<string> comboValues = { "One", "Two", "Three" };
 		ImGui::Combo("Combo box", &comboIndex, comboValues, ImGuiComboFlags_None);
