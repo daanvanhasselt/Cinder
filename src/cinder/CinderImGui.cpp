@@ -183,9 +183,9 @@ namespace ImGui {
 	{
 		ImGui::PopID();
 	}
-	ScopedWindow::ScopedWindow( const char* label )
+	ScopedWindow::ScopedWindow( const char* label, ImGuiWindowFlags flags)
 	{
-		ImGui::Begin( label );
+		ImGui::Begin( label, (bool *)0, flags );
 	}
 	ScopedWindow::~ScopedWindow()
 	{
@@ -208,25 +208,49 @@ namespace ImGui {
 	{
 		ImGui::BeginGroup();
 	}
+	
 	ScopedGroup::~ScopedGroup()
 	{
 		ImGui::EndGroup();
 	}
+	ScopedTreeNode::ScopedTreeNode(const std::string& name)
+		: mOpened(ImGui::TreeNode(name.c_str()))
+	{
+	}
+
+	ScopedTreeNode::~ScopedTreeNode()
+	{
+		if (mOpened) ImGui::TreePop();
+	}
+	
 	ScopedColumns::ScopedColumns( int count, const char* id, bool border )
 	{
 		ImGui::Columns( count, id, border );
 	}
+	
 	ScopedColumns::~ScopedColumns()
 	{
 		ImGui::NextColumn();
 	}
-	ScopedTreeNode::ScopedTreeNode( const std::string& name )
-		: mOpened( ImGui::TreeNode( name.c_str() ) )
-	{
+	
+	ScopedStyleVar::ScopedStyleVar(ImGuiStyleVar styleVar, float value) {
+		ImGui::PushStyleVar(styleVar, value);
 	}
-	ScopedTreeNode::~ScopedTreeNode()
-	{
-		if( mOpened ) ImGui::TreePop();
+
+	ScopedStyleVar::ScopedStyleVar(ImGuiStyleVar styleVar, const ImVec2 &value) {
+		ImGui::PushStyleVar(styleVar, value);
+	}
+
+	ScopedStyleVar::~ScopedStyleVar() {
+		ImGui::PopStyleVar();
+	}
+
+	ScopedItemWidth::ScopedItemWidth(float width) {
+		ImGui::PushItemWidth(width);
+	}
+
+	ScopedItemWidth::~ScopedItemWidth() {
+		ImGui::PopItemWidth();
 	}
 
 	bool DragFloat2( const char* label, glm::vec2* v2, float v_speed, float v_min, float v_max, const char* format, float power ) {

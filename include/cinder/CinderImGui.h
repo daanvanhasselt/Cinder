@@ -147,7 +147,7 @@ namespace ImGui {
 	CI_API void	Image( const ci::gl::Texture2dRef& texture, const ci::vec2& size, const ci::vec2& uv0 = ci::vec2( 0, 0 ), const ci::vec2& uv1 = ci::vec2( 1, 1 ), const ci::vec4& tint_col = ci::vec4( 1, 1, 1, 1 ), const ci::vec4& border_col = ci::vec4( 0, 0, 0, 0 ) );
 
 	struct CI_API ScopedWindow : public ci::Noncopyable {
-		ScopedWindow( const char* label );
+		ScopedWindow( const char* label, ImGuiWindowFlags flags = ImGuiWindowFlags_None );
 		~ScopedWindow();
 	};
 
@@ -188,5 +188,16 @@ namespace ImGui {
 	struct CI_API ScopedColumns : public ci::Noncopyable {
 		ScopedColumns( int count, const char* id = NULL, bool border = true );
 		~ScopedColumns();
+	};
+
+	struct CI_API ScopedStyleVar : public ci::Noncopyable {
+		ScopedStyleVar(ImGuiStyleVar styleVar, float val);
+		ScopedStyleVar(ImGuiStyleVar styleVar, const ImVec2& val);
+		~ScopedStyleVar();
+	};
+
+	struct CI_API ScopedItemWidth : public ci::Noncopyable {
+		ScopedItemWidth(float itemWidth);
+		~ScopedItemWidth();
 	};
 }
