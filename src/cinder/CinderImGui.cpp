@@ -189,9 +189,7 @@ namespace ImGui {
 
 	ScopedWindow::~ScopedWindow()
 	{
-		if (mOpened) {
-			ImGui::End();
-		}
+		ImGui::End();
 	}
 
 	ScopedMainMenuBar::ScopedMainMenuBar() : mOpened{ ImGui::BeginMainMenuBar() } { }
