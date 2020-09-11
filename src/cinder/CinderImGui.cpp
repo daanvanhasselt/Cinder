@@ -183,12 +183,22 @@ namespace ImGui {
 	{
 		ImGui::PopID();
 	}
-	ScopedWindow::ScopedWindow( const char* label, ImGuiWindowFlags flags)
-	{
-		ImGui::Begin( label, (bool *)0, flags );
+	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags) : mLabel(label), mFlags(flags), mHasBegun(false)
+	{}
+
+	bool ScopedWindow::begin() {
+		mHasBegun = true;
+		return ImGui::Begin(mLabel, (bool*)0, mFlags);
 	}
+
 	ScopedWindow::~ScopedWindow()
 	{
+		// prevent a crash
+		if (!mHasBegun) {
+			CI_LOG_E("ScopedWindow::begin() was not called");
+			begin();
+		}
+
 		ImGui::End();
 	}
 
@@ -527,6 +537,14 @@ static ImVec2 ImGui_ImplCinder_GetWindowSize(ImGuiViewport* viewport)
 	return ImVec2();
 }
 
+static float ImGui_ImplCinder_GetWindowDpiScale(ImGuiViewport* viewport)
+{
+	ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData;
+	IM_ASSERT(data->window != 0);
+	auto display = data->window->getDisplay();
+	return display->getContentScale();
+}
+
 static void ImGui_ImplCinder_SetWindowTitle(ImGuiViewport* viewport, const char* title)
 {
 	if (ImGuiViewportDataCinder* data = (ImGuiViewportDataCinder*)viewport->PlatformUserData) {
@@ -590,6 +608,7 @@ static void ImGui_ImplCinder_UpdateMonitors()
 		imgui_monitor.MainSize = ImVec2((float)(b.getWidth()), (float)(b.getHeight()));
 		imgui_monitor.WorkPos = imgui_monitor.MainPos;
 		imgui_monitor.WorkSize = imgui_monitor.MainSize;
+		imgui_monitor.DpiScale = d->getContentScale();
 		ImGuiPlatformIO& io = ImGui::GetPlatformIO();
 		io.Monitors.push_back(imgui_monitor);
 	}
@@ -605,6 +624,7 @@ static void ImGui_ImplCinder_InitPlatformInterface() {
 	platform_io.Platform_GetWindowPos = ImGui_ImplCinder_GetWindowPos;
 	platform_io.Platform_SetWindowSize = ImGui_ImplCinder_SetWindowSize;
 	platform_io.Platform_GetWindowSize = ImGui_ImplCinder_GetWindowSize;
+	platform_io.Platform_GetWindowDpiScale = ImGui_ImplCinder_GetWindowDpiScale;
 	platform_io.Platform_UpdateWindow = ImGui_ImplCinder_UpdateWindow;
 	platform_io.Platform_SetWindowTitle = ImGui_ImplCinder_SetWindowTitle;
 	platform_io.Platform_RenderWindow = ImGui_ImplCinder_RenderWindow;
