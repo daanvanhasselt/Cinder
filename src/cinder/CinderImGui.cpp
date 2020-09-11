@@ -1,5 +1,6 @@
 #include "cinder/CinderImGui.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_internal.h"
 
 #include "cinder/app/App.h"
 #include "cinder/Log.h"
@@ -183,23 +184,14 @@ namespace ImGui {
 	{
 		ImGui::PopID();
 	}
-	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags) : mLabel(label), mFlags(flags), mHasBegun(false)
+	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags) : mOpened(ImGui::Begin(label, (bool*)0, flags))
 	{}
-
-	bool ScopedWindow::begin() {
-		mHasBegun = true;
-		return ImGui::Begin(mLabel, (bool*)0, mFlags);
-	}
 
 	ScopedWindow::~ScopedWindow()
 	{
-		// prevent a crash
-		if (!mHasBegun) {
-			CI_LOG_E("ScopedWindow::begin() was not called");
-			begin();
+		if (mOpened) {
+			ImGui::End();
 		}
-
-		ImGui::End();
 	}
 
 	ScopedMainMenuBar::ScopedMainMenuBar() : mOpened{ ImGui::BeginMainMenuBar() } { }
@@ -212,6 +204,12 @@ namespace ImGui {
 	ScopedMenuBar::~ScopedMenuBar()
 	{
 		if( mOpened ) ImGui::EndMenuBar();
+	}
+
+	ScopedMenu::ScopedMenu(const char* label, bool enabled) : mOpened{ ImGui::BeginMenu(label, enabled) } { }
+	ScopedMenu::~ScopedMenu()
+	{
+		if (mOpened) ImGui::EndMenu();
 	}
 
 	ScopedGroup::ScopedGroup()
@@ -390,6 +388,30 @@ namespace ImGui {
 	void Image( const ci::gl::Texture2dRef& texture, const ci::vec2& size, const ci::vec2& uv0, const ci::vec2& uv1, const ci::vec4& tint_col, const ci::vec4& border_col )
 	{
 		Image( (void*)(intptr_t)texture->getId(), size, uv0, uv1, tint_col, border_col );
+	}
+
+	void PopupModal(const char* label, const char* message, std::function<void()> confirmFn, std::function<void()> cancelFn, const char* confirmLabel, const char* cancelLabel) {
+		if (ImGui::BeginPopupModal(label)) {
+			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 400);
+			ImGui::Text(message);
+			ImGui::Separator();
+
+			if (ImGui::Button(confirmLabel, ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0 - 5, 0))) {
+				if (confirmFn) {
+					confirmFn();
+				}
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button(cancelLabel, ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0 - 5, 0))) {
+				if (cancelFn) {
+					cancelFn();
+				}
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
 	}
 }
 
@@ -926,4 +948,8 @@ bool ImGui::Initialize( const ImGui::Options& options )
 
 	sInitialized = true;
 	return sInitialized;
+}
+
+void ImGui::NewFrameGuard() {
+	ImGui_ImplCinder_NewFrameGuard(ci::app::getWindow());
 }

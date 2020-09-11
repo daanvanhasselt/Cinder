@@ -115,6 +115,10 @@ namespace ImGui {
 	//! used here for initialization, or in App::update() only if the this window is still open.
 	CI_API bool Initialize( const Options& options = Options() );
 
+	// you should never have to call this - however
+	// currently you need to call it after ci::app::getOpenFilePath()/ci::app::getSaveFilePath()
+	CI_API void NewFrameGuard();
+
 	CI_API bool DragFloat2( const char* label, glm::vec2* v2, float v_speed = 1.0f, float v_min = 0.0f, float v_max = 0.0f, const char* format = "%.3f", float power = 1.0f );
 	CI_API bool DragFloat3( const char* label, glm::vec3* v2, float v_speed = 1.0f, float v_min = 0.0f, float v_max = 0.0f, const char* format = "%.3f", float power = 1.0f );
 	CI_API bool DragFloat4( const char* label, glm::vec4* v2, float v_speed = 1.0f, float v_min = 0.0f, float v_max = 0.0f, const char* format = "%.3f", float power = 1.0f );
@@ -146,6 +150,8 @@ namespace ImGui {
 
 	CI_API void	Image( const ci::gl::Texture2dRef& texture, const ci::vec2& size, const ci::vec2& uv0 = ci::vec2( 0, 0 ), const ci::vec2& uv1 = ci::vec2( 1, 1 ), const ci::vec4& tint_col = ci::vec4( 1, 1, 1, 1 ), const ci::vec4& border_col = ci::vec4( 0, 0, 0, 0 ) );
 
+	CI_API void PopupModal( const char* label, const char* message, std::function<void()> confirmFn, std::function<void()> cancelFn = nullptr, const char* confirmLabel = "OK", const char* cancelLabel = "Cancel" );
+
 	/*
 	*	ImGui::ScopedWindow scpWindow("Window");
 	*	if (scpWindow.begin()) {
@@ -154,13 +160,12 @@ namespace ImGui {
 	*/
 	struct CI_API ScopedWindow : public ci::Noncopyable {
 		ScopedWindow(const char* label, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
-		bool begin();
 		~ScopedWindow();
+		//! Returns true when window is visible
+		explicit operator bool() const { return mOpened; }
 
-	private:
-		bool mHasBegun;
-		const char* mLabel;
-		ImGuiWindowFlags mFlags;
+	protected:
+		bool mOpened;
 	};
 
 	struct CI_API ScopedGroup : public ci::Noncopyable {
@@ -186,6 +191,8 @@ namespace ImGui {
 	struct CI_API ScopedMenuBar : public ci::Noncopyable {
 		ScopedMenuBar();
 		~ScopedMenuBar();
+		//! Returns true when menu bar is opened
+		explicit operator bool() const { return mOpened; }
 	protected:
 		bool mOpened;
 	};
@@ -193,6 +200,17 @@ namespace ImGui {
 	struct CI_API ScopedMainMenuBar : public ci::Noncopyable {
 		ScopedMainMenuBar();
 		~ScopedMainMenuBar();
+		//! Returns true when main menu bar is visible
+		explicit operator bool() const { return mOpened; }
+	protected:
+		bool mOpened;
+	};
+
+	struct CI_API ScopedMenu : public ci::Noncopyable {
+		ScopedMenu(const char *label, bool enabled = true);
+		~ScopedMenu();
+		//! Returns true when menu is opened
+		explicit operator bool() const { return mOpened; }
 	protected:
 		bool mOpened;
 	};
