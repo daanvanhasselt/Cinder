@@ -389,10 +389,13 @@ namespace ImGui {
 	}
 
 	void PopupModal(const char* label, const char* message, std::function<void()> confirmFn, std::function<void()> cancelFn, const char* confirmLabel, const char* cancelLabel) {
-		if (ImGui::BeginPopupModal(label)) {
+		ImGui::SetNextWindowSize(ImVec2(500, 200));
+		if (ImGui::BeginPopupModal(label, 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
 			ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 400);
 			ImGui::Text(message);
+			ImGui::NewLine();
 			ImGui::Separator();
+			ImGui::NewLine();
 
 			if (ImGui::Button(confirmLabel, ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0 - 5, 0))) {
 				if (confirmFn) {
