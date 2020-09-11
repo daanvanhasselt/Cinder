@@ -205,7 +205,7 @@ void DockingUIApp::drawUI() {
 	// draw some GUI windows
 	{
 		ImGui::ScopedWindow scpWindow("Scene settings");
-		if (scpWindow.begin()) {
+		if (scpWindow) {
 			ImGui::DragInt2("Scene resolution", &mSceneResolution[0], 1.0, 1, 4096);
 			ImGui::SliderInt("Scene MSAA", &mSceneMSAA, 0, 32);
 			if (ImGui::BeginPopup("popup")) {
@@ -219,19 +219,19 @@ void DockingUIApp::drawUI() {
 	}
 	{
 		ImGui::ScopedWindow scpWindow("Circle parameters");
-		if(scpWindow.begin()) {
+		if(scpWindow) {
 			ImGui::DragFloat("Circle radius", &mCircleRadius);
 		}
 	}
 	{
 		ImGui::ScopedWindow scpWindow("UI settings");
-		if (scpWindow.begin()) {
+		if (scpWindow) {
 			ImGui::DragFloat("UI scale", &mUIScale, 0.01f, 0.25, 3.0);
 		}
 	}
 	{
 		ImGui::ScopedWindow scpWindow("Some other window");
-		if (scpWindow.begin()) {
+		if (scpWindow) {
 			static int comboIndex = 0;
 			static vector<string> comboValues = { "One", "Two", "Three" };
 			ImGui::Combo("Combo box", &comboIndex, comboValues, ImGuiComboFlags_None);
@@ -244,7 +244,7 @@ void DockingUIApp::drawUI() {
 
 	{
 		ImGui::ScopedWindow scpWindow("Style");
-		if (scpWindow.begin()) {
+		if (scpWindow) {
 			ImGui::ShowStyleEditor();
 		}
 	}
@@ -254,7 +254,7 @@ void DockingUIApp::drawUI() {
 	// we draw the scene after the other windows to make sure its tab is selected on startup
 	{
 		ImGui::ScopedWindow scpWindow("Scene");
-		if (scpWindow.begin()) {
+		if (scpWindow) {
 			if (mSceneFbo) {
 				auto tex = mSceneFbo->getColorTexture();
 				// fit in window
