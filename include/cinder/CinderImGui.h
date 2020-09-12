@@ -251,7 +251,12 @@ namespace ImGui {
 	class Logger : public ci::log::LoggerConsole
 	{
 	public:
+		Logger();
+		void setLogLevel(ci::log::Level level) { mLogLevel = level; }
 		virtual void write(const ci::log::Metadata& meta, const std::string& text) override;
 		void draw(bool *open = (bool*)0);
+
+	private:
+		ci::log::Level mLogLevel;
 	};
 }

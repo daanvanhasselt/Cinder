@@ -573,9 +573,15 @@ namespace ImGui {
 
 	static ExampleAppLog log;
 
+	Logger::Logger() : mLogLevel(ci::log::LEVEL_INFO)
+	{
+	}
+
 	void Logger::write(const ci::log::Metadata& meta, const std::string& text)
 	{
-		log.AddLog("%s : %s", meta.toString().c_str(), text.c_str());
+		if (meta.mLevel >= mLogLevel) {
+			log.AddLog("%s : %s", meta.toString().c_str(), text.c_str());
+		}
 	}
 
 	void Logger::draw(bool *open)
