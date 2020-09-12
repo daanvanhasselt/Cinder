@@ -182,6 +182,15 @@ namespace ImGui {
 		bool mOpened;
 	};
 
+	struct CI_API ScopedCollapsingHeader : public ci::Noncopyable {
+		ScopedCollapsingHeader(const std::string& name, ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None);
+		~ScopedCollapsingHeader();
+		//! Returns true when header node is not collapsed
+		explicit operator bool() const { return mOpened; }
+	protected:
+		bool mOpened;
+	};
+
 	struct CI_API ScopedId : public ci::Noncopyable {
 		ScopedId( int int_id );
 		ScopedId( const char* label );
@@ -229,5 +238,12 @@ namespace ImGui {
 	struct CI_API ScopedItemWidth : public ci::Noncopyable {
 		ScopedItemWidth(float itemWidth);
 		~ScopedItemWidth();
+	};
+
+	struct CI_API ScopedIndent : public ci::Noncopyable {
+		ScopedIndent(float indent);
+		~ScopedIndent();
+	protected:
+		float mIndent;
 	};
 }

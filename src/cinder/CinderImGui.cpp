@@ -176,35 +176,52 @@ namespace ImGui {
 	{
 		ImGui::PushID( int_id );
 	}
+
 	ScopedId::ScopedId( const char* label )
 	{
 		ImGui::PushID( label );
 	}
+
 	ScopedId::~ScopedId()
 	{
 		ImGui::PopID();
 	}
-	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags) : mOpened(ImGui::Begin(label, (bool*)0, flags))
-	{}
+
+	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags) 
+		: mOpened(ImGui::Begin(label, (bool*)0, flags))
+	{
+	}
 
 	ScopedWindow::~ScopedWindow()
 	{
 		ImGui::End();
 	}
 
-	ScopedMainMenuBar::ScopedMainMenuBar() : mOpened{ ImGui::BeginMainMenuBar() } { }
+	ScopedMainMenuBar::ScopedMainMenuBar() 
+		: mOpened{ ImGui::BeginMainMenuBar() } 
+	{ 
+	}
+
 	ScopedMainMenuBar::~ScopedMainMenuBar()
 	{
 		if( mOpened ) ImGui::EndMainMenuBar();
 	}
 	
-	ScopedMenuBar::ScopedMenuBar() : mOpened{ ImGui::BeginMenuBar() } { }
+	ScopedMenuBar::ScopedMenuBar() 
+		: mOpened{ ImGui::BeginMenuBar() } 
+	{
+	}
+
 	ScopedMenuBar::~ScopedMenuBar()
 	{
 		if( mOpened ) ImGui::EndMenuBar();
 	}
 
-	ScopedMenu::ScopedMenu(const char* label, bool enabled) : mOpened{ ImGui::BeginMenu(label, enabled) } { }
+	ScopedMenu::ScopedMenu(const char* label, bool enabled) 
+		: mOpened{ ImGui::BeginMenu(label, enabled) } 
+	{
+	}
+
 	ScopedMenu::~ScopedMenu()
 	{
 		if (mOpened) ImGui::EndMenu();
@@ -219,6 +236,7 @@ namespace ImGui {
 	{
 		ImGui::EndGroup();
 	}
+	
 	ScopedTreeNode::ScopedTreeNode(const std::string& name)
 		: mOpened(ImGui::TreeNode(name.c_str()))
 	{
@@ -227,6 +245,15 @@ namespace ImGui {
 	ScopedTreeNode::~ScopedTreeNode()
 	{
 		if (mOpened) ImGui::TreePop();
+	}
+
+	ScopedCollapsingHeader::ScopedCollapsingHeader(const std::string& name, ImGuiTreeNodeFlags flags)
+		: mOpened(ImGui::CollapsingHeader(name.c_str(), flags))
+	{
+	}
+
+	ScopedCollapsingHeader::~ScopedCollapsingHeader()
+	{
 	}
 	
 	ScopedColumns::ScopedColumns( int count, const char* id, bool border )
@@ -257,6 +284,15 @@ namespace ImGui {
 
 	ScopedItemWidth::~ScopedItemWidth() {
 		ImGui::PopItemWidth();
+	}
+
+	ScopedIndent::ScopedIndent(float indent)
+		: mIndent(indent) {
+		ImGui::Indent(indent);
+	}
+
+	ScopedIndent::~ScopedIndent() {
+		ImGui::Indent(-mIndent);
 	}
 
 	bool DragFloat2( const char* label, glm::vec2* v2, float v_speed, float v_min, float v_max, const char* format, float power ) {
