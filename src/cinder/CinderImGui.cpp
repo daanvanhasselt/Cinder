@@ -563,7 +563,7 @@ namespace ImGui {
 			}
 			ImGui::PopStyleVar();
 
-			if (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+			if (AutoScroll)
 				ImGui::SetScrollHereY(1.0f);
 
 			ImGui::EndChild();
@@ -573,14 +573,14 @@ namespace ImGui {
 
 	static ExampleAppLog log;
 
-	Logger::Logger() : mLogLevel(ci::log::LEVEL_INFO)
+	Logger::Logger() : mLogLevel(ci::log::LEVEL_DEBUG)
 	{
 	}
 
 	void Logger::write(const ci::log::Metadata& meta, const std::string& text)
 	{
 		if (meta.mLevel >= mLogLevel) {
-			log.AddLog("%s : %s", meta.toString().c_str(), text.c_str());
+			log.AddLog("%s : %s\n", meta.toString().c_str(), text.c_str());
 		}
 	}
 
