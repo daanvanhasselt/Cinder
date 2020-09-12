@@ -32,6 +32,7 @@
 #include "cinder/Filesystem.h"
 #include "cinder/CinderGlm.h"
 #include "cinder/Noncopyable.h"
+#include "cinder/Log.h"
 
 #include <vector>
 
@@ -237,5 +238,20 @@ namespace ImGui {
 		~ScopedIndent();
 	protected:
 		float mIndent;
+	};
+
+	/*
+	* // in setup
+	* log::makeLogger<ImGui::Logger>();
+	* 
+	* // in draw
+	* auto logger = ci::log::makeOrGetLogger<ImGui::Logger>();
+    * if(logger) logger->draw();
+	*/
+	class Logger : public ci::log::LoggerConsole
+	{
+	public:
+		virtual void write(const ci::log::Metadata& meta, const std::string& text) override;
+		void draw(bool *open = (bool*)0);
 	};
 }
