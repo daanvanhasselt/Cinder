@@ -159,7 +159,7 @@ namespace ImGui {
 	*	}
 	*/
 	struct CI_API ScopedWindow : public ci::Noncopyable {
-		ScopedWindow(const char* label, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
+		ScopedWindow(const char* label, ImGuiWindowFlags flags = ImGuiWindowFlags_None, bool *open = (bool *)0);
 		~ScopedWindow();
 		//! Returns true when window is visible
 		explicit operator bool() const { return mOpened; }
@@ -198,21 +198,13 @@ namespace ImGui {
 	};
 
 	struct CI_API ScopedMenuBar : public ci::Noncopyable {
-		ScopedMenuBar();
+		ScopedMenuBar(bool isMainMenu = false);
 		~ScopedMenuBar();
 		//! Returns true when menu bar is opened
 		explicit operator bool() const { return mOpened; }
 	protected:
 		bool mOpened;
-	};
-
-	struct CI_API ScopedMainMenuBar : public ci::Noncopyable {
-		ScopedMainMenuBar();
-		~ScopedMainMenuBar();
-		//! Returns true when main menu bar is visible
-		explicit operator bool() const { return mOpened; }
-	protected:
-		bool mOpened;
+		bool mIsMainMenu;
 	};
 
 	struct CI_API ScopedMenu : public ci::Noncopyable {

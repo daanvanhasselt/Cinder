@@ -187,8 +187,8 @@ namespace ImGui {
 		ImGui::PopID();
 	}
 
-	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags) 
-		: mOpened(ImGui::Begin(label, (bool*)0, flags))
+	ScopedWindow::ScopedWindow(const char* label, ImGuiWindowFlags flags, bool *open) 
+		: mOpened(ImGui::Begin(label, open, flags))
 	{
 	}
 
@@ -197,24 +197,16 @@ namespace ImGui {
 		ImGui::End();
 	}
 
-	ScopedMainMenuBar::ScopedMainMenuBar() 
-		: mOpened{ ImGui::BeginMainMenuBar() } 
-	{ 
-	}
-
-	ScopedMainMenuBar::~ScopedMainMenuBar()
+	ScopedMenuBar::ScopedMenuBar(bool isMainMenu) 
+		: mIsMainMenu(isMainMenu)
 	{
-		if( mOpened ) ImGui::EndMainMenuBar();
-	}
-	
-	ScopedMenuBar::ScopedMenuBar() 
-		: mOpened{ ImGui::BeginMenuBar() } 
-	{
+		mOpened = mIsMainMenu ? ImGui::BeginMainMenuBar() : ImGui::BeginMenuBar();
 	}
 
 	ScopedMenuBar::~ScopedMenuBar()
 	{
-		if( mOpened ) ImGui::EndMenuBar();
+		if (mOpened && mIsMainMenu) ImGui::EndMainMenuBar();
+		if( mOpened && !mIsMainMenu ) ImGui::EndMenuBar();
 	}
 
 	ScopedMenu::ScopedMenu(const char* label, bool enabled) 
