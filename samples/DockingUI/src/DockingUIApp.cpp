@@ -102,7 +102,7 @@ ImGuiStyle DockingUIApp::setupStyle() {
 	style.Colors[ImGuiCol_ButtonActive] = Base03;
 	style.Colors[ImGuiCol_SliderGrab] = Yellow;
 	style.Colors[ImGuiCol_SliderGrabActive] = Yellow;
-	style.Colors[ImGuiCol_Header] = Base02;
+	style.Colors[ImGuiCol_Header] = Base035;
 	style.Colors[ImGuiCol_HeaderHovered] = Base015;
 	style.Colors[ImGuiCol_HeaderActive] = Base035;
 	style.Colors[ImGuiCol_Separator] = Base02;
