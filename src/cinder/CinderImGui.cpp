@@ -491,17 +491,11 @@ namespace ImGui {
 				return;
 			}
 
-			// Options menu
-			if (ImGui::BeginPopup("Options"))
-			{
-				ImGui::Checkbox("Auto-scroll", &AutoScroll);
-				ImGui::EndPopup();
-			}
+			// Auto scroll
+			ImGui::Checkbox("Auto-scroll", &AutoScroll);			
+			ImGui::SameLine();
 
 			// Main window
-			if (ImGui::Button("Options"))
-				ImGui::OpenPopup("Options");
-			ImGui::SameLine();
 			bool clear = ImGui::Button("Clear");
 			ImGui::SameLine();
 			bool copy = ImGui::Button("Copy");
