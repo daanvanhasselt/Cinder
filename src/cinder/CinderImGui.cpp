@@ -557,6 +557,9 @@ namespace ImGui {
 			}
 			ImGui::PopStyleVar();
 
+			if (copy)
+				ImGui::LogFinish();
+
 			if (AutoScroll)
 				ImGui::SetScrollHereY(1.0f);
 
